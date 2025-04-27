@@ -30,21 +30,22 @@ pipeline {
                 '''
             }
         }
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh '''
-                        . venv/bin/activate
-                        
-                        sonar-scanner \
+       stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('sonarqube') {
+            script {
+                def scannerHome = tool 'SonarQubeScanner'
+                sh """
+                    ${scannerHome}/bin/sonar-scanner \
                         -Dsonar.projectKey=k8shelloworld \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=http://54.225.124.9:9000 \
                         -Dsonar.login=$SONARQUBE_TOKEN
-                    '''
-                }
+                """
             }
         }
+    }
+}
         stage('Build and Push Docker Image') {
             when {
                 branch 'main'
