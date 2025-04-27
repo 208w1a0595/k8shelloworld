@@ -33,7 +33,7 @@ pipeline {
         }
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {  // Use the same name as configured in Manage Jenkins
+                withSonarQubeEnv('Sonarqube') {  // Use the same name as configured in Manage Jenkins
                     sh '''
                         . venv/bin/activate
                         pip install sonar-scanner  # Optional, but helps with coverage for python
