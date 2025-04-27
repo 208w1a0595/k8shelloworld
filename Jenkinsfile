@@ -38,7 +38,7 @@ pipeline {
                         . venv/bin/activate
                         pip install sonar-scanner  # Optional, but helps with coverage for python
                         sonar-scanner \
-                        -Dsonar.projectKey=python-k8s-demo \
+                        -Dsonar.projectKey=k8shelloworld \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=https://54.225.124.9:9000 \
                         -Dsonar.login=$SONARQUBE_TOKEN
