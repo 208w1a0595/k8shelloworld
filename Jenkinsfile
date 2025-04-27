@@ -35,9 +35,7 @@ pipeline {
                 withSonarQubeEnv('sonarqube') {
                     sh '''
                         . venv/bin/activate
-                        if ! command -v sonar-scanner >/dev/null 2>&1; then
-                            pip install sonar-scanner
-                        fi
+                        
                         sonar-scanner \
                         -Dsonar.projectKey=k8shelloworld \
                         -Dsonar.sources=. \
