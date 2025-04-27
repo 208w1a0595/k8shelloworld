@@ -1,9 +1,11 @@
+
 pipeline {
     agent any
     environment {
         DOCKERHUB_USERNAME = 'gowri5877'
         DOCKER_IMAGE = "${DOCKERHUB_USERNAME}/pythonimg"
         DOCKERHUB_TOKEN = credentials('docker-hub-credential')
+        SONARQUBE_TOKEN = credentials('sonarqube-credential')
     }
     stages {
         stage('Checkout') {
@@ -11,7 +13,6 @@ pipeline {
                 checkout scm
             }
         }
-
         stage('Install Dependencies') {
             steps {
                 sh '''
@@ -22,7 +23,6 @@ pipeline {
                 '''
             }
         }
-
         stage('Unit Test') {
             steps {
                 sh '''
@@ -31,7 +31,21 @@ pipeline {
                 '''
             }
         }
-
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {  // Use the same name as configured in Manage Jenkins
+                    sh '''
+                        . venv/bin/activate
+                        pip install sonar-scanner  # Optional, but helps with coverage for python
+                        sonar-scanner \
+                        -Dsonar.projectKey=python-k8s-demo \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=https://54.225.124.9:9000 \
+                        -Dsonar.login=$SONARQUBE_TOKEN
+                    '''
+                }
+            }
+        }
         stage('Build and Push Docker Image') {
             when {
                 branch 'main'
@@ -44,7 +58,6 @@ pipeline {
                 """
             }
         }
-
         stage('Deploy to Kubernetes') {
             when {
                 branch 'main'
