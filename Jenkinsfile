@@ -1,42 +1,55 @@
 pipeline {
     agent any
-     environment {
-    DOCKERHUB_TOKEN = credentials('docker-hub-credential')
-  }
+
+    environment {
+        DOCKERHUB_USERNAME = 'gowri5877'
+        DOCKER_IMAGE = "${DOCKERHUB_USERNAME}/pythonimg"
+        DOCKERHUB_TOKEN = credentials('docker-hub-credential')
+    }
+
     stages {
-	
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Build and Test') {
+        stage('Install Dependencies') {
             steps {
-                script {
-                    if (env.BRANCH_NAME.startsWith('feature/')) {
-                        echo "Running tests on feature branch"
-                        sh 'mvn clean install'
-                        sh 'mvn test'
-                    } else if (env.BRANCH_NAME == 'main') {
-                        echo "Building, testing, and pushing Docker image on development branch"
-                        sh 'mvn clean install'
-                        sh 'mvn test'
-                         sh "echo ${DOCKERHUB_TOKEN} | docker login -u gowri5877 --password-stdin"
-                            sh 'docker build -t gowri5877/pythonimg .'
-                            sh 'docker push gowri5877/pythonimg'
-                        }
-                    }
-                }
+                sh 'pip install --upgrade pip && pip install -r requirements.txt'
             }
-	stage('Deployment'){
-		steps{
+        }
 
-			sh 'kubectl apply -f deployment.yaml'
-			sh 'kubectl apply -f service.yaml'
-		
-		}
+        stage('Unit Test') {
+            steps {
+                sh 'pytest test_app.py' // adjust if tests/ directory or command is different
+            }
         }
+
+        stage('Build and Push Docker Image') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh "echo ${DOCKERHUB_TOKEN} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin"
+                sh "docker build -t ${DOCKER_IMAGE} ."
+                sh "docker push ${DOCKER_IMAGE}"
+            }
         }
-	
+
+        stage('Deploy to Kubernetes') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
+            }
+        }
     }
+    post {
+        always {
+            sh 'docker logout'
+        }
+    }
+}
