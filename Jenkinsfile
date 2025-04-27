@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
     environment {
@@ -33,14 +32,16 @@ pipeline {
         }
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('Sonarqube') {  // Use the same name as configured in Manage Jenkins
+                withSonarQubeEnv('sonarqube') {
                     sh '''
                         . venv/bin/activate
-                        pip install sonar-scanner  # Optional, but helps with coverage for python
+                        if ! command -v sonar-scanner >/dev/null 2>&1; then
+                            pip install sonar-scanner
+                        fi
                         sonar-scanner \
                         -Dsonar.projectKey=k8shelloworld \
                         -Dsonar.sources=. \
-                        -Dsonar.host.url=https://54.225.124.9:9000 \
+                        -Dsonar.host.url=http://54.225.124.9:9000 \
                         -Dsonar.login=$SONARQUBE_TOKEN
                     '''
                 }
