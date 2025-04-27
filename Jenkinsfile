@@ -1,12 +1,10 @@
 pipeline {
     agent any
-
     environment {
         DOCKERHUB_USERNAME = 'gowri5877'
         DOCKER_IMAGE = "${DOCKERHUB_USERNAME}/pythonimg"
         DOCKERHUB_TOKEN = credentials('docker-hub-credential')
     }
-
     stages {
         stage('Checkout') {
             steps {
@@ -16,13 +14,21 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'pip install --upgrade pip && pip install -r requirements.txt'
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Unit Test') {
             steps {
-                sh 'pytest test_app.py' // adjust if tests/ directory or command is different
+                sh '''
+                    . venv/bin/activate
+                    pytest
+                '''
             }
         }
 
@@ -31,9 +37,11 @@ pipeline {
                 branch 'main'
             }
             steps {
-                sh "echo ${DOCKERHUB_TOKEN} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin"
-                sh "docker build -t ${DOCKER_IMAGE} ."
-                sh "docker push ${DOCKER_IMAGE}"
+                sh """
+                    echo ${DOCKERHUB_TOKEN} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin
+                    docker build -t ${DOCKER_IMAGE} .
+                    docker push ${DOCKER_IMAGE}
+                """
             }
         }
 
@@ -49,7 +57,7 @@ pipeline {
     }
     post {
         always {
-            sh 'docker logout'
+            sh 'docker logout || true'
         }
     }
 }
